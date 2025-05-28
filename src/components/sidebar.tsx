@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import {
   Home,
   User,
@@ -18,11 +19,10 @@ interface SidebarItem {
   icon: React.ComponentType<any>;
   label: string;
   href: string;
-  isActive?: boolean;
 }
 
 const sidebarItems: SidebarItem[] = [
-  { icon: Home, label: "Home", href: "/app", isActive: true },
+  { icon: Home, label: "Home", href: "/app" },
   { icon: Lightbulb, label: "Incubator", href: "/app/incubator" },
   { icon: Gamepad2, label: "Games", href: "/app/games" },
   { icon: Bot, label: "AI Tools", href: "/app/ai-tools" },
@@ -32,6 +32,12 @@ const sidebarItems: SidebarItem[] = [
 export default function Sidebar() {
   const [isExpanded, setIsExpanded] = useState(false);
   const { logout, authenticated, user } = usePrivy();
+  const pathname = usePathname();
+  const router = useRouter();
+
+  const handleProfileClick = () => {
+    router.push('/app/profile');
+  };
 
   return (
     <div
@@ -68,20 +74,20 @@ export default function Sidebar() {
             Wagus
           </span>
         </div>
-      </div>
-      {/* Navigation Items */}
+      </div>      {/* Navigation Items */}
       <nav className="flex-1 px-2 flex items-center justify-center">
         <ul className="space-y-2 w-full">
           {sidebarItems.map((item, index) => {
             const IconComponent = item.icon;
+            const isActive = pathname === item.href;
             return (
               <li key={index}>
-                <a
-                  href={item.href}
+                <button
+                  onClick={() => router.push(item.href)}
                   className={`
-                    flex items-center px-3 py-3 rounded-lg transition-all duration-200 group/item
+                    w-full flex items-center px-3 py-3 rounded-lg transition-all duration-200 group/item
                     ${
-                      item.isActive
+                      isActive
                         ? "bg-purple-600 text-white"
                         : "text-gray-300 hover:bg-gray-900 hover:text-white"
                     }
@@ -91,7 +97,7 @@ export default function Sidebar() {
                     className={`
                       w-5 h-5 flex-shrink-0 transition-all duration-200
                       ${
-                        item.isActive
+                        isActive
                           ? "text-white"
                           : "text-gray-400 group-hover/item:text-white"
                       }
@@ -124,7 +130,7 @@ export default function Sidebar() {
                   >
                     {item.label}
                   </div>
-                </a>
+                </button>
               </li>
             );
           })}
@@ -133,9 +139,10 @@ export default function Sidebar() {
       <div className="p-4 border-t border-gray-900">
         <div
           className={`
-          flex items-center transition-all duration-300
+          flex items-center transition-all duration-300 cursor-pointer hover:bg-gray-900 rounded-lg p-2 -m-2
           ${isExpanded ? "space-x-3" : "justify-center"}
         `}
+          onClick={handleProfileClick}
         >
           {/* Avatar - always visible */}
           <div className="w-8 h-8 bg-gray-800 rounded-full flex items-center justify-center flex-shrink-0 border-2 border-blue-500">
@@ -162,7 +169,10 @@ export default function Sidebar() {
                   }
                 </p>
                 <button
-                  onClick={logout}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    logout();
+                  }}
                   className="cursor-pointer mt-2 flex items-center space-x-1 text-xs text-red-400 hover:text-red-300 transition-colors"
                 >
                   <LogOut className="w-3 h-3" />

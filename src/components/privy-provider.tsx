@@ -1,7 +1,6 @@
 'use client';
 
 import {PrivyProvider} from '@privy-io/react-auth';
-import PrivyReadyWrapper from './privy-ready-wrapper';
 
 export default function Providers({children}: {children: React.ReactNode}) {
   return (
@@ -26,9 +25,7 @@ export default function Providers({children}: {children: React.ReactNode}) {
         // emailDomainAllowlist: ['gmail.com', 'outlook.com'], 
       }}
     >
-      <PrivyReadyWrapper>
-        {children}
-      </PrivyReadyWrapper>
+      {children}
     </PrivyProvider>
   );
 }

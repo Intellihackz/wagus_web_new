@@ -11,10 +11,11 @@ export default function Page() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [email, setEmail] = useState("your email");
+  const [isVerified, setIsVerified] = useState(false);
+  const [countdown, setCountdown] = useState(30);
   const { loginWithCode } = useLoginWithEmail();
   const { authenticated, user } = usePrivy();
   const router = useRouter();
-
   // Get email from sessionStorage on component mount
   useEffect(() => {
     const storedEmail = sessionStorage.getItem('verifyEmail');
@@ -26,16 +27,61 @@ export default function Page() {
     }
   }, [router]);
 
-  // Redirect to app if already authenticated
+  // Handle authentication success and countdown
   useEffect(() => {
-    if (authenticated) {
+    if (authenticated && !isVerified) {
+      setIsVerified(true);
       // Clear the stored email on successful authentication
       sessionStorage.removeItem('verifyEmail');
+    }
+  }, [authenticated, isVerified]);
+
+  // Countdown timer for auto-redirect
+  useEffect(() => {
+    if (isVerified && countdown > 0) {
+      const timer = setTimeout(() => {
+        setCountdown(countdown - 1);
+      }, 1000);
+      return () => clearTimeout(timer);
+    } else if (isVerified && countdown === 0) {
       router.push("/app");
     }
-  }, [authenticated, router]);
+  }, [isVerified, countdown, router]);
 
-  const handleVerifyCode = async () => {
+  const handleEnterApp = () => {
+    router.push("/app");
+  };
+  // Show success screen if verified
+  if (isVerified) {
+    return (
+      <div className="h-screen flex items-center justify-center">
+        <div className="text-center w-[480px]">
+          <div className="mb-6">
+            <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <h1 className="text-xl font-bold mb-2">Email Verified Successfully!</h1>
+            <p className="text-gray-400 text-sm mb-6">Welcome to Wagus. You can now access your account.</p>
+          </div>
+          
+          <div className="flex flex-col gap-4">
+            <Button
+              className="h-12 font-bold cursor-pointer bg-purple-600 hover:bg-purple-700"
+              onClick={handleEnterApp}
+            >
+              Enter App
+            </Button>
+            
+            <p className="text-sm text-gray-400">
+              Auto-redirecting in {countdown} seconds...
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }  const handleVerifyCode = async () => {
     if (!code) return;
     
     setIsLoading(true);
@@ -43,7 +89,7 @@ export default function Page() {
     
     try {
       await loginWithCode({ code });
-      // The useEffect above will handle the redirect after authentication
+      // The useEffect above will handle setting isVerified and starting countdown
     } catch (error) {
       console.error("Error verifying code:", error);
       setError("Invalid verification code. Please try again.");
@@ -51,29 +97,6 @@ export default function Page() {
       setIsLoading(false);
     }
   };
-
-  // Show success state if authenticated
-  if (authenticated) {
-    return (
-      <div className="h-screen flex items-center justify-center">
-        <div className="text-center w-[480px]">
-          <h1 className="mb-6 text-2xl font-bold">Welcome to WAGUS</h1>
-          <Button 
-            className="h-12 font-bold cursor-pointer p-6 mb-4"
-            onClick={() => router.push("/app")}
-          >  
-            [  Enter WAGUS  ]
-          </Button>
-          <p className="text-sm font-bold">Current Tier : Basic</p>
-          {user?.wallet?.address && (
-            <p className="text-xs text-gray-400 mt-2">
-              Wallet: {user.wallet.address.slice(0, 6)}...{user.wallet.address.slice(-4)}
-            </p>
-          )}
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="h-screen flex items-center justify-center">

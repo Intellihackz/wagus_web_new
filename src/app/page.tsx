@@ -1,8 +1,8 @@
 "use client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useLoginWithEmail } from "@privy-io/react-auth";
-import { useState } from "react";
+import { useLoginWithEmail, usePrivy } from "@privy-io/react-auth";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 
 export default function Home() {
@@ -10,7 +10,26 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const { sendCode } = useLoginWithEmail();
+  const { authenticated } = usePrivy();
   const router = useRouter();
+
+  // Redirect to app if already authenticated
+  useEffect(() => {
+    if (authenticated) {
+      router.push("/app");
+    }
+  }, [authenticated, router]);
+
+  // Show loading while checking authentication or redirecting
+  if (authenticated) {
+    return (
+      <div className="h-screen flex items-center justify-center">
+        <div className="text-center">
+          <p>Redirecting to app...</p>
+        </div>
+      </div>
+    );
+  }
 
   const validateEmail = (email: string) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
