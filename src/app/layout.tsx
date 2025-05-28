@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Orbitron } from "next/font/google";
 import "./globals.css";
+import Providers from "@/components/privy-provider";
 
 const orbitron = Orbitron({
   subsets: ["latin"],
@@ -8,7 +9,7 @@ const orbitron = Orbitron({
 });
 
 export const metadata: Metadata = {
-  title: "Wagus ",
+  title: "Wagus",
   description: "We all gonna use solana",
 };
 
@@ -19,10 +20,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body
-        className={`${orbitron.className} bg-black text-white`}
-      >
-        {children}
+      <body className={`${orbitron.className} bg-black text-white`}>
+        <Providers>
+          {children}
+        </Providers>
       </body>
     </html>
   );

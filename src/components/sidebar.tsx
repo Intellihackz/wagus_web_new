@@ -10,7 +10,9 @@ import {
   Trophy,
   ChevronLeft,
   Search,
+  LogOut,
 } from "lucide-react";
+import { usePrivy } from "@privy-io/react-auth";
 
 interface SidebarItem {
   icon: React.ComponentType<any>;
@@ -29,6 +31,7 @@ const sidebarItems: SidebarItem[] = [
 
 export default function Sidebar() {
   const [isExpanded, setIsExpanded] = useState(false);
+  const { logout, authenticated, user } = usePrivy();
 
   return (
     <div
@@ -126,8 +129,7 @@ export default function Sidebar() {
             );
           })}
         </ul>
-      </nav>{" "}
-      {/* Profile Section */}
+      </nav>{" "}      {/* Profile Section */}
       <div className="p-4 border-t border-gray-900">
         <div
           className={`
@@ -136,7 +138,7 @@ export default function Sidebar() {
         `}
         >
           {/* Avatar - always visible */}
-          <div className="w-8 h-8 bg-gray-800 rounded-full flex items-center justify-center flex-shrink-0 border-2 border-red-500">
+          <div className="w-8 h-8 bg-gray-800 rounded-full flex items-center justify-center flex-shrink-0 border-2 border-blue-500">
             <User className="w-4 h-4 text-gray-300" />
           </div>
           {/* Profile info - only visible when expanded */}
@@ -148,10 +150,33 @@ export default function Sidebar() {
               }
             `}
           >
-            <p className="text-sm font-medium text-white truncate">
-              [username]
-            </p>
-            <p className="text-xs text-gray-400 truncate">[address]</p>
+            {authenticated && user ? (
+              <>
+                <p className="text-sm font-medium text-white truncate">
+                  {user.email?.address ? `[${user.email.address.split('@')[0]}]` : '[user]'}
+                </p>
+                <p className="text-xs text-gray-400 truncate">
+                  {user.wallet?.address 
+                    ? `${user.wallet.address.slice(0, 6)}...${user.wallet.address.slice(-4)}`
+                    : 'No wallet'
+                  }
+                </p>
+                <button
+                  onClick={logout}
+                  className="cursor-pointer mt-2 flex items-center space-x-1 text-xs text-red-400 hover:text-red-300 transition-colors"
+                >
+                  <LogOut className="w-3 h-3" />
+                  <span>Logout</span>
+                </button>
+              </>
+            ) : (
+              <>
+                <p className="text-sm font-medium text-white truncate">
+                  [username]
+                </p>
+                <p className="text-xs text-gray-400 truncate">[address]</p>
+              </>
+            )}
           </div>
         </div>
       </div>

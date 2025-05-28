@@ -1,12 +1,40 @@
-import React from "react";
+"use client";
+import React, { useState, useEffect } from "react";
 import Sidebar from "@/components/sidebar";
+import { usePrivy } from "@privy-io/react-auth";
+import { useRouter } from "next/navigation";
 
 export default function AppPage() {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const router = useRouter();
+  
+  // Now it's safe to use Privy hooks since we have the ready wrapper
+  const { logout, authenticated, user } = usePrivy();
+
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (!authenticated) {
+      router.push("/");
+    }
+  }, [authenticated, router]);
+
+  // Show loading while checking authentication
+  if (!authenticated) {
+    return (
+      <div className="h-screen flex items-center justify-center bg-black">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
+          <p className="text-lg text-white">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex h-screen bg-black">
       <Sidebar />
       <div className="flex-1 ml-16 transition-all duration-300 flex flex-col">
-        {" "}        {/* Chat Header */}
+        {/* Chat Header */}
         <div className="border-b border-gray-800 p-6">
           <div className="flex items-center justify-between">
             {/* Floating Chips */}
@@ -32,15 +60,12 @@ export default function AppPage() {
               <div className="bg-gray-800 hover:bg-gray-700 px-3 py-1.5 rounded-sm text-sm text-gray-300 cursor-pointer transition-colors whitespace-nowrap">
                 #Announcements
               </div>
-            </div>
-
-            {/* Stats */}
+            </div>            {/* Stats */}
             <div className="flex items-center space-x-4">
               <div className="flex items-center space-x-1">
                 <div className="w-2 h-2 bg-green-500 rounded-full"></div>
                 <span className="text-sm text-gray-400">1,234 online</span>
-              </div>
-              <div className="flex items-center space-x-1">
+              </div>              <div className="flex items-center space-x-1">
                 <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
                 <span className="text-sm text-gray-400">123 holders</span>
               </div>
@@ -242,13 +267,66 @@ export default function AppPage() {
             <button className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-lg transition-colors font-medium">
               Send
             </button>
-          </div>
-          <div className="flex items-center justify-between mt-3 text-xs text-gray-500">
+          </div>          <div className="flex items-center justify-between mt-3 text-xs text-gray-500">
             <span>Press Enter to send, Shift + Enter for new line</span>
-            <span>Connected as [username]</span>
+            <span>
+              Connected as {user?.email?.address ? `[${user.email.address.split('@')[0]}]` : '[user]'}
+            </span>
           </div>
         </div>
       </div>
+
+      {/* Floating Button */}
+      {/* <button
+        onClick={() => setIsModalOpen(true)}
+        className="fixed bottom-6 right-6 w-16 h-16 bg-purple-600 hover:bg-purple-700 rounded-full shadow-lg transition-all duration-300 hover:scale-110 flex items-center justify-center z-40"
+      >
+        <img
+          src="/logo.png"
+          alt="Wagus Logo"
+          className="w-10 h-10 object-contain"
+        />
+      </button> */}
+
+      {/* Modal */}
+      {isModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50">
+          <div className="bg-gray-900 bg-opacity-95 backdrop-blur-sm rounded-lg p-8 max-w-md w-full mx-4 relative">
+            {/* Close Button */}
+            <button
+              onClick={() => setIsModalOpen(false)}
+              className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+
+            {/* Modal Content */}
+            <div className="text-center">
+              <img
+                src="/logo.png"
+                alt="Wagus Logo"
+                className="w-20 h-20 object-contain mx-auto mb-4"
+              />
+              <h2 className="text-2xl font-bold text-white mb-2">Wagus</h2>
+              <p className="text-gray-300 mb-6">We all gonna use Solana</p>
+              
+              <div className="space-y-3">
+                <button className="w-full bg-purple-600 hover:bg-purple-700 text-white py-2 px-4 rounded-lg transition-colors">
+                  Connect Wallet
+                </button>
+                <button className="w-full bg-gray-700 hover:bg-gray-600 text-white py-2 px-4 rounded-lg transition-colors">
+                  View Profile
+                </button>
+                <button className="w-full bg-gray-700 hover:bg-gray-600 text-white py-2 px-4 rounded-lg transition-colors">
+                  Settings
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
