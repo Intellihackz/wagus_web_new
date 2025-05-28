@@ -1,6 +1,7 @@
 'use client';
 
 import {PrivyProvider} from '@privy-io/react-auth';
+import { AccountTierProvider } from '@/context/account-tier-context';
 
 export default function Providers({children}: {children: React.ReactNode}) {
   return (
@@ -25,7 +26,9 @@ export default function Providers({children}: {children: React.ReactNode}) {
         // emailDomainAllowlist: ['gmail.com', 'outlook.com'], 
       }}
     >
-      {children}
+      <AccountTierProvider>
+        {children}
+      </AccountTierProvider>
     </PrivyProvider>
   );
 }

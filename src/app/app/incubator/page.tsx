@@ -10,6 +10,7 @@ import {
   ChevronDown,
   ChevronUp
 } from 'lucide-react';
+import { useAccountTier } from '@/context/account-tier-context';
 
 interface Project {
   id: string;
@@ -61,6 +62,8 @@ const mockProjects: Project[] = [
 
 export default function IncubatorPage() {
   const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set());
+  const { getThemeColors } = useAccountTier();
+  const themeColors = getThemeColors();
 
   const handleBackProject = (projectId: string, amount: number) => {
     console.log(`Backing project ${projectId} with $${amount}`);
@@ -88,9 +91,8 @@ export default function IncubatorPage() {
       <div className="bg-black text-white">
         {/* Header */}
         <div className="mb-8">
-          <div>
-            <h1 className="text-3xl font-bold mb-2 flex items-center gap-3">
-              <Lightbulb className="w-8 h-8 text-yellow-500" />
+          <div>            <h1 className="text-3xl font-bold mb-2 flex items-center gap-3">
+              <Lightbulb className={`w-8 h-8 ${themeColors.accent}`} />
               Incubator
             </h1>
             <p className="text-gray-400 text-lg">
@@ -107,7 +109,7 @@ export default function IncubatorPage() {
             return (
               <div 
                 key={project.id} 
-                className={`bg-gray-900 rounded-lg border border-gray-800 overflow-hidden hover:border-purple-500 transition-all duration-300 ${
+                className={`bg-gray-900 rounded-lg border border-gray-800 overflow-hidden ${themeColors.accentHover.replace('hover:text-', 'hover:border-')} transition-all duration-300 ${
                   isExpanded ? 'row-span-2' : ''
                 }`}
                 style={{ 
@@ -156,7 +158,7 @@ export default function IncubatorPage() {
                           href={project.links[index]}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="flex items-center gap-1 text-purple-400 hover:text-purple-300 text-xs bg-gray-800 px-1 py-1 rounded text-center justify-center"
+                          className={`flex items-center gap-1 ${themeColors.accent} ${themeColors.accentHover} text-xs bg-gray-800 px-1 py-1 rounded text-center justify-center`}
                         >
                           <linkType.icon className="w-2 h-2" />
                           <span className="truncate">{linkType.label}</span>
@@ -177,7 +179,7 @@ export default function IncubatorPage() {
                     project.spendingPlan.length > maxSpendingPlanLength) && (
                     <button
                       onClick={() => toggleCardExpansion(project.id)}
-                      className="flex items-center gap-1 text-purple-400 hover:text-purple-300 text-sm mb-4 self-start"
+                      className={`flex items-center gap-1 ${themeColors.accent} ${themeColors.accentHover} text-sm mb-4 self-start`}
                     >
                       {isExpanded ? (
                         <>
@@ -206,9 +208,8 @@ export default function IncubatorPage() {
                         {Math.round((project.funding / project.targetFunding) * 100)}%
                       </span>
                     </div>
-                    <div className="w-full bg-gray-800 rounded-full h-2">
-                      <div 
-                        className="bg-purple-600 h-2 rounded-full transition-all duration-300"
+                    <div className="w-full bg-gray-800 rounded-full h-2">                      <div 
+                        className={`${themeColors.primary} h-2 rounded-full transition-all duration-300`}
                         style={{ width: `${Math.min((project.funding / project.targetFunding) * 100, 100)}%` }}
                       ></div>
                     </div>
@@ -223,7 +224,7 @@ export default function IncubatorPage() {
                       <Button
                         key={amount}
                         onClick={() => handleBackProject(project.id, amount)}
-                        className="bg-purple-600 hover:bg-purple-700 text-white text-sm py-2 px-3"
+                        className={`${themeColors.primary} ${themeColors.primaryHover} text-white text-sm py-2 px-3`}
                       >
                         ${amount}
                       </Button>

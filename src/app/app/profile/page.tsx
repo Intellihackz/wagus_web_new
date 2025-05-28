@@ -5,13 +5,15 @@ import { usePrivy } from '@privy-io/react-auth';
 import { User, Mail, Wallet, Settings, Shield, Edit3, Check, X, Camera } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { useAccountTier } from '@/context/account-tier-context';
 
 export default function ProfilePage() {
   const { user, logout, authenticated } = usePrivy();
+  const { accountTier, setAccountTier, getThemeColors } = useAccountTier();
   const [isEditingUsername, setIsEditingUsername] = useState(false);
   const [username, setUsername] = useState(user?.email?.address?.split('@')[0] || 'User');
   const [tempUsername, setTempUsername] = useState(username);
-  const [accountTier, setAccountTier] = useState<'basic' | 'adventurer'>('basic');
+  const themeColors = getThemeColors();
 
   const handleSaveUsername = () => {
     setUsername(tempUsername);
@@ -39,9 +41,8 @@ export default function ProfilePage() {
   return (
     <AppLayout>
       <div className="bg-black text-white">        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2 flex items-center gap-3">
-            <User className="w-8 h-8 text-blue-500" />
+        <div className="mb-8">          <h1 className="text-3xl font-bold mb-2 flex items-center gap-3">
+            <User className={`w-8 h-8 ${themeColors.accent}`} />
             Profile
           </h1>
           <p className="text-gray-400 text-lg">
@@ -51,10 +52,9 @@ export default function ProfilePage() {
 
         {/* User Avatar and Basic Info */}
         <div className="mb-8">
-          <div className="flex items-center gap-6">
-            {/* Avatar */}
+          <div className="flex items-center gap-6">            {/* Avatar */}
             <div className="relative">
-              <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-2xl font-bold text-white">
+              <div className={`w-20 h-20 bg-gradient-to-br ${themeColors.gradientFrom} ${themeColors.gradientTo} rounded-full flex items-center justify-center text-2xl font-bold text-white`}>
                 {username.charAt(0).toUpperCase()}
               </div>
               <button className="absolute -bottom-1 -right-1 w-7 h-7 bg-gray-700 hover:bg-gray-600 rounded-full flex items-center justify-center border-2 border-black transition-colors">
@@ -73,11 +73,10 @@ export default function ProfilePage() {
                       onChange={(e) => setTempUsername(e.target.value)}
                       className="bg-gray-800 border-gray-700 text-white w-48"
                       autoFocus
-                    />
-                    <Button
+                    />                    <Button
                       onClick={handleSaveUsername}
                       size="sm"
-                      className="bg-green-600 hover:bg-green-700 p-2"
+                      className={`${themeColors.primary} ${themeColors.primaryHover} p-2`}
                     >
                       <Check className="w-4 h-4" />
                     </Button>
@@ -108,8 +107,7 @@ export default function ProfilePage() {
               {/* Account Tier */}
               <div className="flex items-center gap-3">
                 <span className="text-sm text-gray-400">Account Tier:</span>
-                <div className="flex gap-2">
-                  <button
+                <div className="flex gap-2">                  <button
                     onClick={() => setAccountTier('basic')}
                     className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
                       accountTier === 'basic'
@@ -136,9 +134,8 @@ export default function ProfilePage() {
         </div>{/* Profile Content */}
         <div className="space-y-8">
           {/* Account Information */}
-          <div>
-            <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
-              <Shield className="w-5 h-5 text-green-500" />
+          <div>            <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
+              <Shield className={`w-5 h-5 ${themeColors.accent}`} />
               Account Information
             </h2>
             
@@ -179,9 +176,8 @@ export default function ProfilePage() {
           </div>
 
           {/* Wallet Information */}
-          <div>
-            <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
-              <Wallet className="w-5 h-5 text-purple-500" />
+          <div>            <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
+              <Wallet className={`w-5 h-5 ${themeColors.accent}`} />
               Wallet Information
             </h2>
             

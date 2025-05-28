@@ -14,6 +14,7 @@ import {
   LogOut,
 } from "lucide-react";
 import { usePrivy } from "@privy-io/react-auth";
+import { useAccountTier } from "@/context/account-tier-context";
 
 interface SidebarItem {
   icon: React.ComponentType<any>;
@@ -32,8 +33,10 @@ const sidebarItems: SidebarItem[] = [
 export default function Sidebar() {
   const [isExpanded, setIsExpanded] = useState(false);
   const { logout, authenticated, user } = usePrivy();
+  const { getThemeColors } = useAccountTier();
   const pathname = usePathname();
   const router = useRouter();
+  const themeColors = getThemeColors();
 
   const handleProfileClick = () => {
     router.push('/app/profile');
@@ -83,12 +86,11 @@ export default function Sidebar() {
             return (
               <li key={index}>
                 <button
-                  onClick={() => router.push(item.href)}
-                  className={`
+                  onClick={() => router.push(item.href)}                  className={`
                     w-full flex items-center px-3 py-3 rounded-lg transition-all duration-200 group/item
                     ${
                       isActive
-                        ? "bg-purple-600 text-white"
+                        ? `${themeColors.primary} text-white`
                         : "text-gray-300 hover:bg-gray-900 hover:text-white"
                     }
                   `}
@@ -144,8 +146,7 @@ export default function Sidebar() {
         `}
           onClick={handleProfileClick}
         >
-          {/* Avatar - always visible */}
-          <div className="w-8 h-8 bg-gray-800 rounded-full flex items-center justify-center flex-shrink-0 border-2 border-blue-500">
+          {/* Avatar - always visible */}          <div className={`w-8 h-8 bg-gray-800 rounded-full flex items-center justify-center flex-shrink-0 border-2 ${themeColors.primary.replace('bg-', 'border-')}`}>
             <User className="w-4 h-4 text-gray-300" />
           </div>
           {/* Profile info - only visible when expanded */}

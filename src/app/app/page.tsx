@@ -3,10 +3,13 @@ import React, { useState, useEffect } from "react";
 import Sidebar from "@/components/sidebar";
 import { usePrivy } from "@privy-io/react-auth";
 import { useRouter } from "next/navigation";
+import { useAccountTier } from "@/context/account-tier-context";
 
 export default function AppPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const router = useRouter();
+  const { getThemeColors } = useAccountTier();
+  const themeColors = getThemeColors();
   
   // Now it's safe to use Privy hooks since we have the ready wrapper
   const { logout, authenticated, user } = usePrivy();
@@ -20,10 +23,9 @@ export default function AppPage() {
 
   // Show loading while checking authentication
   if (!authenticated) {
-    return (
-      <div className="h-screen flex items-center justify-center bg-black">
+    return (      <div className="h-screen flex items-center justify-center bg-black">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
+          <div className={`animate-spin rounded-full h-12 w-12 border-b-2 ${themeColors.accent.replace('text-', 'border-')} mx-auto mb-4`}></div>
           <p className="text-lg text-white">Loading...</p>
         </div>
       </div>
@@ -66,7 +68,7 @@ export default function AppPage() {
                 <div className="w-2 h-2 bg-green-500 rounded-full"></div>
                 <span className="text-sm text-gray-400">1,234 online</span>
               </div>              <div className="flex items-center space-x-1">
-                <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                <div className={`w-2 h-2 ${themeColors.primary} rounded-full`}></div>
                 <span className="text-sm text-gray-400">123 holders</span>
               </div>
             </div>
@@ -77,8 +79,7 @@ export default function AppPage() {
           <div className="space-y-4">
             {/* Sample Messages */}
             <div className="space-y-1">
-              <div className="flex items-center space-x-2 mb-1">
-                <span className="text-purple-400 font-medium">
+              <div className="flex items-center space-x-2 mb-1">                <span className={`${themeColors.accent} font-medium`}>
                   [alice_crypto]
                 </span>
                 <span className="text-xs text-gray-500">2:30 PM</span>
@@ -228,7 +229,7 @@ export default function AppPage() {
                 <input
                   type="text"
                   placeholder="Type your message..."
-                  className="w-full bg-gray-900 border border-gray-700 rounded-lg py-3 px-4 text-white placeholder-gray-400 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-colors"
+                  className={`w-full bg-gray-900 border border-gray-700 rounded-lg py-3 px-4 text-white placeholder-gray-400 focus:outline-none ${themeColors.accent.replace('text-', 'focus:border-')} focus:ring-1 ${themeColors.accent.replace('text-', 'focus:ring-')} transition-colors`}
                 />
                 <div className="absolute right-3 top-1/2 transform -translate-y-1/2 flex items-center space-x-2">
                   <button className="text-gray-400 hover:text-gray-300 transition-colors">
@@ -263,8 +264,7 @@ export default function AppPage() {
                   </button>
                 </div>
               </div>
-            </div>
-            <button className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-lg transition-colors font-medium">
+            </div>            <button className={`${themeColors.primary} ${themeColors.primaryHover} text-white px-6 py-3 rounded-lg transition-colors font-medium`}>
               Send
             </button>
           </div>          <div className="flex items-center justify-between mt-3 text-xs text-gray-500">
@@ -274,12 +274,10 @@ export default function AppPage() {
             </span>
           </div>
         </div>
-      </div>
-
-      {/* Floating Button */}
+      </div>      {/* Floating Button */}
       {/* <button
         onClick={() => setIsModalOpen(true)}
-        className="fixed bottom-6 right-6 w-16 h-16 bg-purple-600 hover:bg-purple-700 rounded-full shadow-lg transition-all duration-300 hover:scale-110 flex items-center justify-center z-40"
+        className={`fixed bottom-6 right-6 w-16 h-16 ${themeColors.primary} ${themeColors.primaryHover} rounded-full shadow-lg transition-all duration-300 hover:scale-110 flex items-center justify-center z-40`}
       >
         <img
           src="/logo.png"
@@ -312,8 +310,7 @@ export default function AppPage() {
               <h2 className="text-2xl font-bold text-white mb-2">Wagus</h2>
               <p className="text-gray-300 mb-6">We all gonna use Solana</p>
               
-              <div className="space-y-3">
-                <button className="w-full bg-purple-600 hover:bg-purple-700 text-white py-2 px-4 rounded-lg transition-colors">
+              <div className="space-y-3">                <button className={`w-full ${themeColors.primary} ${themeColors.primaryHover} text-white py-2 px-4 rounded-lg transition-colors`}>
                   Connect Wallet
                 </button>
                 <button className="w-full bg-gray-700 hover:bg-gray-600 text-white py-2 px-4 rounded-lg transition-colors">
