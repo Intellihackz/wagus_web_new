@@ -2,6 +2,7 @@
 
 import {PrivyProvider} from '@privy-io/react-auth';
 import { AccountTierProvider } from '@/context/account-tier-context';
+import { FirebaseProvider } from '@/context/firebase-context';
 
 export default function Providers({children}: {children: React.ReactNode}) {
   return (
@@ -26,9 +27,11 @@ export default function Providers({children}: {children: React.ReactNode}) {
         // emailDomainAllowlist: ['gmail.com', 'outlook.com'], 
       }}
     >
-      <AccountTierProvider>
-        {children}
-      </AccountTierProvider>
+      <FirebaseProvider>
+        <AccountTierProvider>
+          {children}
+        </AccountTierProvider>
+      </FirebaseProvider>
     </PrivyProvider>
   );
 }

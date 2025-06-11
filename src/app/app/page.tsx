@@ -1,18 +1,60 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, {
+  useState,
+  useEffect,
+  useRef,
+  useCallback,
+  useMemo,
+} from "react";
 import Sidebar from "@/components/sidebar";
+import MessageItem from "@/components/MessageItem";
 import { usePrivy } from "@privy-io/react-auth";
 import { useRouter } from "next/navigation";
 import { useAccountTier } from "@/context/account-tier-context";
+import { useRealtimeChat, useChatActions } from "@/hooks/useRealtimeChat";
+import { useUserManagement } from "@/hooks/useUserManagement";
+import { chatService, ChatMessage } from "@/services/chatService";
 
 export default function AppPage() {
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [currentChannel, setCurrentChannel] = useState("General");
+  const [newMessage, setNewMessage] = useState("");
+  const [userStats, setUserStats] = useState({
+    online: 0,
+    total: 0,
+    holders: 0,
+  });
+  const messagesEndRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
   const { getThemeColors } = useAccountTier();
   const themeColors = getThemeColors();
-  
-  // Now it's safe to use Privy hooks since we have the ready wrapper
+
+  // User management hook
+  const {
+    userData,
+    loading: userLoading,
+    getUserTier,
+    walletAddress,
+    tier,
+  } = useUserManagement();
+
+  // Privy hooks
   const { logout, authenticated, user } = usePrivy();
+  // Use optimized real-time chat hooks
+  const { 
+    messages, 
+    loading: messagesLoading, 
+    loadingMore, 
+    hasMore, 
+    loadMoreMessages 
+  } = useRealtimeChat({
+    room: currentChannel,
+    limitCount: 50,
+  });
+
+  const { sendMessage, likeMessage, sending } = useChatActions(); // Memoized reversed messages to prevent unnecessary re-renders
+  const reversedMessages = useMemo(() => {
+    return messages ? ([...messages].reverse() as ChatMessage[]) : [];
+  }, [messages]);
 
   // Redirect to login if not authenticated
   useEffect(() => {
@@ -21,11 +63,118 @@ export default function AppPage() {
     }
   }, [authenticated, router]);
 
+  // Get user stats on component mount and when channel changes
+  useEffect(() => {
+    chatService.getUserStats().then(setUserStats);
+  }, [currentChannel]);
+  // Auto-scroll to bottom when new messages arrive (but not when loading older messages)
+  const previousMessageCountRef = useRef<number>(0);
+  const isLoadingMoreRef = useRef<boolean>(false);
+  
+  useEffect(() => {
+    // Only auto-scroll if we're not loading more messages and new messages were added to the end
+    if (!isLoadingMoreRef.current && reversedMessages.length > previousMessageCountRef.current) {
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
+    previousMessageCountRef.current = reversedMessages.length;
+  }, [reversedMessages.length]);// Memoized message sending function
+  const handleSendMessage = useCallback(async () => {
+    if (!newMessage.trim() || !user || sending || !userData) return;
+
+    try {
+      // Use the wallet address from user management system
+      const sender =
+        userData.wallet || user?.wallet?.address || user?.id || "anonymous";
+
+      await sendMessage({
+        sender,
+        message: newMessage.trim(),
+        room: currentChannel,
+        tier: userData.tier || "Basic", // Use actual user tier from Firebase
+        username: userData.username, // Include username if available
+      });
+
+      setNewMessage("");
+    } catch (error) {
+      console.error("Error sending message:", error);
+    }
+  }, [newMessage, user, currentChannel, sending, sendMessage, userData]);
+  // Memoized like handler
+  const handleLikeMessage = useCallback(
+    async (messageId: string) => {
+      if (!user || !messageId || !userData?.wallet) return;
+
+      try {
+        await likeMessage(messageId, userData.wallet);
+      } catch (error) {
+        console.error("Error liking message:", error);
+      }
+    },
+    [user, likeMessage, userData?.wallet]
+  );
+  // Handle Enter key press
+  const handleKeyPress = useCallback(
+    (e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        handleSendMessage();
+      }
+    },
+    [handleSendMessage]
+  );
+  // Memoized channel change handler
+  const handleChannelChange = useCallback(
+    (channel: string) => {
+      if (channel !== currentChannel) {
+        setCurrentChannel(channel);
+        // Reset loading flag when changing channels
+        isLoadingMoreRef.current = false;
+        previousMessageCountRef.current = 0;
+      }
+    },
+    [currentChannel]
+  );
+  // Infinite scroll: load more messages when scrolled to top
+  const chatAreaRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const chatArea = chatAreaRef.current;
+    if (!chatArea) return;
+    
+    const handleScroll = () => {
+      if (chatArea.scrollTop === 0 && hasMore && !loadingMore) {
+        // Store current scroll height before loading more messages
+        const previousScrollHeight = chatArea.scrollHeight;
+        isLoadingMoreRef.current = true;
+        
+        loadMoreMessages().then(() => {
+          // After loading, restore scroll position to maintain user's view
+          setTimeout(() => {
+            const newScrollHeight = chatArea.scrollHeight;
+            const heightDifference = newScrollHeight - previousScrollHeight;
+            chatArea.scrollTop = heightDifference;
+            isLoadingMoreRef.current = false;
+          }, 100);
+        }).catch(() => {
+          isLoadingMoreRef.current = false;
+        });
+      }
+    };
+    
+    chatArea.addEventListener('scroll', handleScroll);
+    return () => chatArea.removeEventListener('scroll', handleScroll);
+  }, [hasMore, loadingMore, loadMoreMessages]);
+
   // Show loading while checking authentication
   if (!authenticated) {
-    return (      <div className="h-screen flex items-center justify-center bg-black">
+    return (
+      <div className="h-screen flex items-center justify-center bg-black">
         <div className="text-center">
-          <div className={`animate-spin rounded-full h-12 w-12 border-b-2 ${themeColors.accent.replace('text-', 'border-')} mx-auto mb-4`}></div>
+          <div
+            className={`animate-spin rounded-full h-12 w-12 border-b-2 ${themeColors.accent.replace(
+              "text-",
+              "border-"
+            )} mx-auto mb-4`}
+          ></div>
           <p className="text-lg text-white">Loading...</p>
         </div>
       </div>
@@ -39,186 +188,93 @@ export default function AppPage() {
         {/* Chat Header */}
         <div className="border-b border-gray-800 p-6">
           <div className="flex items-center justify-between">
+            {" "}
             {/* Floating Chips */}
             <div className="flex items-center space-x-4 overflow-x-auto">
-              <div className="bg-gray-800 hover:bg-gray-700 px-3 py-1.5 rounded-sm text-sm text-gray-300 cursor-pointer transition-colors whitespace-nowrap">
-                #General
-              </div>
-              <div className="bg-gray-800 hover:bg-gray-700 px-3 py-1.5 rounded-sm text-sm text-gray-300 cursor-pointer transition-colors whitespace-nowrap">
-                #NFTs
-              </div>
-              <div className="bg-gray-800 hover:bg-gray-700 px-3 py-1.5 rounded-sm text-sm text-gray-300 cursor-pointer transition-colors whitespace-nowrap">
-                #Gaming
-              </div>
-              <div className="bg-gray-800 hover:bg-gray-700 px-3 py-1.5 rounded-sm text-sm text-gray-300 cursor-pointer transition-colors whitespace-nowrap">
-                #AI Tools
-              </div>
-              <div className="bg-gray-800 hover:bg-gray-700 px-3 py-1.5 rounded-sm text-sm text-gray-300 cursor-pointer transition-colors whitespace-nowrap">
-                #Trading
-              </div>
-              <div className="bg-gray-800 hover:bg-gray-700 px-3 py-1.5 rounded-sm text-sm text-gray-300 cursor-pointer transition-colors whitespace-nowrap">
-                #Development
-              </div>
-              <div className="bg-gray-800 hover:bg-gray-700 px-3 py-1.5 rounded-sm text-sm text-gray-300 cursor-pointer transition-colors whitespace-nowrap">
-                #Announcements
-              </div>
-            </div>            {/* Stats */}
+              {[
+                "General",
+                "Support",
+                "Games",
+                "Ideas",
+                "Tier Lounge",
+                "Hypervane",
+                "Samu",
+              ].map((channel) => (
+                <div
+                  key={channel}
+                  onClick={() => handleChannelChange(channel)}
+                  className={`px-3 py-1.5 rounded-sm text-sm cursor-pointer transition-colors whitespace-nowrap ${
+                    currentChannel === channel
+                      ? `${themeColors.primary} text-white`
+                      : "bg-gray-800 hover:bg-gray-700 text-gray-300"
+                  }`}
+                >
+                  #{channel}
+                </div>
+              ))}
+            </div>{" "}
+            {/* Stats */}
             <div className="flex items-center space-x-4">
               <div className="flex items-center space-x-1">
                 <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                <span className="text-sm text-gray-400">1,234 online</span>
-              </div>              <div className="flex items-center space-x-1">
-                <div className={`w-2 h-2 ${themeColors.primary} rounded-full`}></div>
-                <span className="text-sm text-gray-400">123 holders</span>
+                <span className="text-sm text-gray-400">
+                  {userStats.online} online
+                </span>
+              </div>
+              <div className="flex items-center space-x-1">
+                <div
+                  className={`w-2 h-2 ${themeColors.primary} rounded-full`}
+                ></div>
+                <span className="text-sm text-gray-400">
+                  {userStats.holders} holders
+                </span>
               </div>
             </div>
           </div>
-        </div>
+        </div>{" "}
         {/* Chat Messages Area */}
-        <div className="flex-1 overflow-y-auto p-6 flex flex-col justify-end">
-          <div className="space-y-4">
-            {/* Sample Messages */}
-            <div className="space-y-1">
-              <div className="flex items-center space-x-2 mb-1">                <span className={`${themeColors.accent} font-medium`}>
-                  [alice_crypto]
-                </span>
-                <span className="text-xs text-gray-500">2:30 PM</span>
+        <div ref={chatAreaRef} className="flex-1 overflow-y-auto p-6">
+          <div className="space-y-4 min-h-full flex flex-col">
+            {loadingMore && (
+              <div className="text-center text-xs text-gray-500 py-2">Loading more messages...</div>
+            )}
+            {messagesLoading ? (
+              <div className="text-center py-8 flex-1 flex items-center justify-center">
+                <div>
+                  <div
+                    className={`animate-spin rounded-full h-8 w-8 border-b-2 ${themeColors.accent.replace(
+                      "text-",
+                      "border-"
+                    )} mx-auto mb-4`}
+                  ></div>
+                  <p className="text-gray-400">Loading messages...</p>
+                </div>
               </div>
-              <div className="flex items-start justify-between">
-                <p className="text-gray-300 flex-1">
-                  Hey everyone! Just minted my first NFT on Solana 🚀
-                </p>
-                <button className="text-gray-400 hover:text-red-500 transition-colors ml-3">
-                  <svg
-                    className="w-4 h-4"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
-                    />
-                  </svg>
-                </button>
+            ) : reversedMessages.length === 0 ? (
+              <div className="text-center py-8 flex-1 flex items-center justify-center">
+                <div>
+                  <p className="text-gray-400">
+                    No messages in #{currentChannel} yet.
+                  </p>
+                  <p className="text-gray-500 text-sm mt-2">
+                    Be the first to start the conversation!
+                  </p>
+                </div>
               </div>
-            </div>
-
-            <div className="space-y-1">
-              <div className="flex items-center space-x-2 mb-1">
-                <span className="text-blue-400 font-medium">[5Gk...7xR2]</span>
-                <span className="text-xs text-gray-500">2:32 PM</span>
-              </div>
-              <div className="flex items-start justify-between">
-                <p className="text-gray-300 flex-1">
-                  Congrats! The Solana ecosystem is amazing for creators
-                </p>
-                <button className="text-gray-400 hover:text-red-500 transition-colors ml-3">
-                  <svg
-                    className="w-4 h-4"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
-                    />
-                  </svg>
-                </button>
-              </div>
-            </div>
-
-            <div className="space-y-1">
-              <div className="flex items-center space-x-2 mb-1">
-                <span className="text-green-400 font-medium">
-                  [dev_charlie]
-                </span>
-                <span className="text-xs text-gray-500">2:35 PM</span>
-              </div>
-              <div className="flex items-start justify-between">
-                <p className="text-gray-300 flex-1">
-                  Anyone working on any cool Web3 projects? Would love to
-                  collaborate!
-                </p>
-                <button className="text-gray-400 hover:text-red-500 transition-colors ml-3">
-                  <svg
-                    className="w-4 h-4"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
-                    />
-                  </svg>
-                </button>
-              </div>
-            </div>
-
-            <div className="space-y-1">
-              <div className="flex items-center space-x-2 mb-1">
-                <span className="text-orange-400 font-medium">
-                  [9Ab...3Kz8]
-                </span>
-                <span className="text-xs text-gray-500">2:38 PM</span>
-              </div>
-              <div className="flex items-start justify-between">
-                <p className="text-gray-300 flex-1">
-                  Just discovered this platform, loving the community vibes! 💜
-                </p>
-                <button className="text-gray-400 hover:text-red-500 transition-colors ml-3">
-                  <svg
-                    className="w-4 h-4"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
-                    />
-                  </svg>
-                </button>
-              </div>
-            </div>
-
-            <div className="space-y-1">
-              <div className="flex items-center space-x-2 mb-1">
-                <span className="text-red-400 font-medium">[wagus_fan]</span>
-                <span className="text-xs text-gray-500">2:40 PM</span>
-              </div>
-              <div className="flex items-start justify-between">
-                <p className="text-gray-300 flex-1">
-                  The future is definitely decentralized. Wagus is leading the
-                  way!
-                </p>
-                <button className="text-gray-400 hover:text-red-500 transition-colors ml-3">
-                  <svg
-                    className="w-4 h-4"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
-                    />
-                  </svg>
-                </button>
-              </div>
-            </div>
+            ) : (
+              <>
+                <div className="flex-1"></div>{" "}
+                {reversedMessages.map((message) => (
+                  <MessageItem
+                    key={message.id}
+                    message={message}
+                    onLike={handleLikeMessage}
+                    currentUserId={userData?.wallet}
+                  />
+                ))}
+              </>
+            )}
+            <div ref={messagesEndRef} />
           </div>
         </div>
         {/* Chat Input - Fixed at bottom */}
@@ -226,10 +282,25 @@ export default function AppPage() {
           <div className="flex items-center space-x-4">
             <div className="flex-1">
               <div className="relative">
+                {" "}
                 <input
                   type="text"
-                  placeholder="Type your message..."
-                  className={`w-full bg-gray-900 border border-gray-700 rounded-lg py-3 px-4 text-white placeholder-gray-400 focus:outline-none ${themeColors.accent.replace('text-', 'focus:border-')} focus:ring-1 ${themeColors.accent.replace('text-', 'focus:ring-')} transition-colors`}
+                  value={newMessage}
+                  onChange={(e) => setNewMessage(e.target.value)}
+                  onKeyPress={handleKeyPress}
+                  placeholder={
+                    userLoading
+                      ? "Loading user data..."
+                      : "Type your message..."
+                  }
+                  disabled={sending || userLoading || !userData}
+                  className={`w-full bg-gray-900 border border-gray-700 rounded-lg py-3 px-4 text-white placeholder-gray-400 focus:outline-none ${themeColors.accent.replace(
+                    "text-",
+                    "focus:border-"
+                  )} focus:ring-1 ${themeColors.accent.replace(
+                    "text-",
+                    "focus:ring-"
+                  )} transition-colors disabled:opacity-50`}
                 />
                 <div className="absolute right-3 top-1/2 transform -translate-y-1/2 flex items-center space-x-2">
                   <button className="text-gray-400 hover:text-gray-300 transition-colors">
@@ -264,66 +335,47 @@ export default function AppPage() {
                   </button>
                 </div>
               </div>
-            </div>            <button className={`${themeColors.primary} ${themeColors.primaryHover} text-white px-6 py-3 rounded-lg transition-colors font-medium`}>
-              Send
+            </div>{" "}
+            <button
+              onClick={handleSendMessage}
+              disabled={
+                !newMessage.trim() || sending || userLoading || !userData
+              }
+              className={`${themeColors.primary} ${themeColors.primaryHover} text-white px-6 py-3 rounded-lg transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed`}
+            >
+              {sending ? "Sending..." : userLoading ? "Loading..." : "Send"}
             </button>
-          </div>          <div className="flex items-center justify-between mt-3 text-xs text-gray-500">
+          </div>{" "}
+          <div className="flex items-center justify-between mt-3 text-xs text-gray-500">
             <span>Press Enter to send, Shift + Enter for new line</span>
             <span>
-              Connected as {user?.email?.address ? `[${user.email.address.split('@')[0]}]` : '[user]'}
+              Connected as{" "}
+              {userLoading
+                ? "[loading...]"
+                : userData?.wallet
+                ? `[${userData.wallet.slice(0, 6)}...${userData.wallet.slice(
+                    -4
+                  )}]`
+                : user?.email?.address
+                ? `[${user.email.address.split("@")[0]}]`
+                : "[user]"}
+              {userData?.tier && (
+                <span
+                  className={`ml-2 px-2 py-0.5 rounded text-xs ${
+                    userData.tier === "Adventurer"
+                      ? "bg-purple-900 text-purple-300"
+                      : userData.tier === "Basic"
+                      ? "bg-blue-900 text-blue-300"
+                      : "bg-green-900 text-green-300"
+                  }`}
+                >
+                  {userData.tier}
+                </span>
+              )}
             </span>
           </div>
         </div>
-      </div>      {/* Floating Button */}
-      {/* <button
-        onClick={() => setIsModalOpen(true)}
-        className={`fixed bottom-6 right-6 w-16 h-16 ${themeColors.primary} ${themeColors.primaryHover} rounded-full shadow-lg transition-all duration-300 hover:scale-110 flex items-center justify-center z-40`}
-      >
-        <img
-          src="/logo.png"
-          alt="Wagus Logo"
-          className="w-10 h-10 object-contain"
-        />
-      </button> */}
-
-      {/* Modal */}
-      {isModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50">
-          <div className="bg-gray-900 bg-opacity-95 backdrop-blur-sm rounded-lg p-8 max-w-md w-full mx-4 relative">
-            {/* Close Button */}
-            <button
-              onClick={() => setIsModalOpen(false)}
-              className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors"
-            >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-
-            {/* Modal Content */}
-            <div className="text-center">
-              <img
-                src="/logo.png"
-                alt="Wagus Logo"
-                className="w-20 h-20 object-contain mx-auto mb-4"
-              />
-              <h2 className="text-2xl font-bold text-white mb-2">Wagus</h2>
-              <p className="text-gray-300 mb-6">We all gonna use Solana</p>
-              
-              <div className="space-y-3">                <button className={`w-full ${themeColors.primary} ${themeColors.primaryHover} text-white py-2 px-4 rounded-lg transition-colors`}>
-                  Connect Wallet
-                </button>
-                <button className="w-full bg-gray-700 hover:bg-gray-600 text-white py-2 px-4 rounded-lg transition-colors">
-                  View Profile
-                </button>
-                <button className="w-full bg-gray-700 hover:bg-gray-600 text-white py-2 px-4 rounded-lg transition-colors">
-                  Settings
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      </div>
     </div>
   );
 }
