@@ -1,13 +1,23 @@
 'use client';
 
 import { useSearchParams } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { usePrivyAuth } from '@/lib/hooks/use-privy-auth';
 import { useLoginWithEmail } from '@privy-io/react-auth';
 import { useSolanaWallets } from '@privy-io/react-auth/solana';
 import { decryptEmail, isValidEmail, isLinkExpired, LINK_VALIDITY_HOURS } from '@/lib/utils/crypto';
 
-export default function ExportPage() {
+// Loading component to display while the main component is loading
+function ExportLoading() {
+  return (
+    <div className="flex flex-col items-center justify-center min-h-screen bg-black text-white p-8">
+      <p className="text-xl">Loading...</p>
+    </div>
+  );
+}
+
+// Main export page content
+function ExportPageContent() {
   const searchParams = useSearchParams();
   const { ready } = usePrivyAuth();
   const { sendCode, loginWithCode } = useLoginWithEmail();
@@ -193,5 +203,14 @@ export default function ExportPage() {
         <p>&copy; {new Date().getFullYear()} Wagus. All rights reserved.</p>
       </footer>
     </div>
+  );
+}
+
+// Default export that wraps the main content in a Suspense boundary
+export default function ExportPage() {
+  return (
+    <Suspense fallback={<ExportLoading />}>
+      <ExportPageContent />
+    </Suspense>
   );
 }
