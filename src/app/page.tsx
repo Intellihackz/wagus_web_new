@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, Suspense } from 'react';
+import { useState, Suspense } from 'react';
 import Image from "next/image";
 import { usePrivyAuth } from '@/lib/hooks/use-privy-auth';
 import { useLoginWithEmail } from '@privy-io/react-auth';
@@ -18,7 +18,8 @@ function ExportLoading() {
 
 // Main content component
 function ExportPageContent() {
-  const { ready } = usePrivyAuth();
+  // We keep the Privy auth but don't need ready for this page
+  usePrivyAuth();
   const { sendCode, loginWithCode } = useLoginWithEmail();
   const { exportWallet } = useSolanaWallets();
   
@@ -112,7 +113,7 @@ function ExportPageContent() {
           <div className="bg-zinc-900 p-4 sm:p-6 rounded-lg w-full max-w-md border border-zinc-800">
             <h2 className="text-xl sm:text-2xl font-semibold mb-3 sm:mb-4">Verify Your Email</h2>
             <p className="text-zinc-300 text-sm sm:text-base mb-4 sm:mb-6">
-              We've sent a verification code to <strong className="break-all">{email}</strong>. Please check your inbox and enter the code below.
+              We&apos;ve sent a verification code to <strong className="break-all">{email}</strong>. Please check your inbox and enter the code below.
             </p>
             
             <div className="mb-4 sm:mb-6">
