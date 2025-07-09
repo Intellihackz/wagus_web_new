@@ -1,6 +1,6 @@
 'use client';
 
-import { useSearchParams, useRouter } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { usePrivyAuth } from '@/lib/hooks/use-privy-auth';
 import { useLoginWithEmail } from '@privy-io/react-auth';
@@ -9,8 +9,7 @@ import { decryptEmail, isValidEmail, isLinkExpired, LINK_VALIDITY_HOURS } from '
 
 export default function ExportPage() {
   const searchParams = useSearchParams();
-  const router = useRouter();
-  const { ready, authenticated, user } = usePrivyAuth();
+  const { ready } = usePrivyAuth();
   const { sendCode, loginWithCode } = useLoginWithEmail();
   const { exportWallet } = useSolanaWallets();
   
@@ -102,14 +101,14 @@ export default function ExportPage() {
             </p>
             
             <button
-              className="w-full py-3 px-6 bg-white hover:bg-gray-200 transition-colors text-black font-medium rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full py-3 px-6 bg-white hover:bg-zinc-200 transition-colors text-black font-medium rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
               onClick={handleSendCode}
               disabled={isLoading}
             >
               {isLoading ? 'Sending...' : 'Send Verification Code'}
             </button>
             
-            {error && <p className="text-gray-400 mt-4">{error}</p>}
+            {error && <p className="text-zinc-400 mt-4">{error}</p>}
           </div>
         );
         
@@ -118,7 +117,7 @@ export default function ExportPage() {
           <div className="bg-zinc-900 p-6 rounded-lg w-full max-w-md border border-zinc-800">
             <h2 className="text-2xl font-semibold mb-4">Enter Verification Code</h2>
             <p className="text-zinc-300 mb-6">
-              We've sent a verification code to <strong>{email}</strong>. Please check your inbox and enter the code below.
+              We&apos;ve sent a verification code to <strong>{email}</strong>. Please check your inbox and enter the code below.
             </p>
             
             <div className="mb-6">
@@ -143,7 +142,7 @@ export default function ExportPage() {
                 Back
               </button>
               <button
-                className="flex-1 py-3 px-6 bg-white hover:bg-gray-200 transition-colors text-black font-medium rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-1 py-3 px-6 bg-white hover:bg-zinc-200 transition-colors text-black font-medium rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
                 onClick={handleVerifyCode}
                 disabled={isLoading || !code}
               >
@@ -151,7 +150,7 @@ export default function ExportPage() {
               </button>
             </div>
             
-            {error && <p className="text-gray-400 mt-4">{error}</p>}
+            {error && <p className="text-zinc-400 mt-4">{error}</p>}
           </div>
         );
         
@@ -164,7 +163,7 @@ export default function ExportPage() {
             </p>
             
             <button
-              className="w-full py-3 px-6 bg-white hover:bg-gray-200 transition-colors text-black font-medium rounded-md"
+              className="w-full py-3 px-6 bg-white hover:bg-zinc-200 transition-colors text-black font-medium rounded-md"
               onClick={handleExportSecretKey}
             >
               Export Secret Key

@@ -18,7 +18,7 @@ export default function Home() {
           COMING SOON
         </h1>
         
-        <p className="text-xl md:text-2xl text-gray-300 mb-8">
+        <p className="text-xl md:text-2xl text-zinc-300 mb-8">
           We are working on something amazing. Stay tuned.
         </p>
 
@@ -26,7 +26,7 @@ export default function Home() {
           href="https://wagus-app.com" 
           target="_blank" 
           rel="noopener noreferrer"
-          className="inline-flex items-center justify-center px-6 py-3 text-lg font-medium text-black bg-white hover:bg-gray-200 border border-white rounded-md transition-colors duration-200"
+          className="inline-flex items-center justify-center px-6 py-3 text-lg font-medium text-black bg-white hover:bg-zinc-200 border border-white rounded-md transition-colors duration-200"
         >
           Visit Wagus App
           <svg 
@@ -40,7 +40,7 @@ export default function Home() {
         </Link>
       </main>
       
-      <footer className="absolute bottom-8 text-white/50 text-sm">
+      <footer className="absolute bottom-8 text-zinc-400 text-sm">
         <p>&copy; {new Date().getFullYear()} Wagus. All rights reserved.</p>
       </footer>
     </div>

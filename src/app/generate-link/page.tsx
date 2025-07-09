@@ -35,9 +35,9 @@ export default function EmailLinkGenerator() {
           Email Link Generator
         </h1>
         
-        <div className="bg-gray-900 p-6 rounded-lg w-full max-w-md">
+        <div className="bg-zinc-900 p-6 rounded-lg w-full max-w-md border border-zinc-800">
           <div className="mb-6">
-            <label htmlFor="email" className="block text-sm font-medium text-gray-400 mb-2">
+            <label htmlFor="email" className="block text-sm font-medium text-zinc-400 mb-2">
               Email Address
             </label>
             <input
@@ -45,14 +45,14 @@ export default function EmailLinkGenerator() {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-white"
+              className="w-full px-4 py-3 bg-zinc-800 border border-zinc-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-white"
               placeholder="Enter email address"
             />
-            {error && <p className="text-gray-400 mt-2 text-sm">{error}</p>}
+            {error && <p className="text-zinc-400 mt-2 text-sm">{error}</p>}
           </div>
           
           <button
-            className="w-full py-3 px-6 bg-white hover:bg-gray-200 transition-colors text-black font-medium rounded-md"
+            className="w-full py-3 px-6 bg-white hover:bg-zinc-200 transition-colors text-black font-medium rounded-md"
             onClick={handleGenerate}
           >
             Generate Link
@@ -60,7 +60,7 @@ export default function EmailLinkGenerator() {
           
           {generatedLink && (
             <div className="mt-6">
-              <label className="block text-sm font-medium text-gray-400 mb-2">
+              <label className="block text-sm font-medium text-zinc-400 mb-2">
                 Generated Link
               </label>
               <div className="flex">
@@ -68,11 +68,11 @@ export default function EmailLinkGenerator() {
                   type="text"
                   readOnly
                   value={generatedLink}
-                  className="flex-grow px-4 py-3 bg-gray-800 border border-gray-700 rounded-l-md text-white focus:outline-none"
+                  className="flex-grow px-4 py-3 bg-zinc-800 border border-zinc-700 rounded-l-md text-white focus:outline-none"
                 />
                 <button
                   onClick={handleCopy}
-                  className="px-4 py-3 bg-gray-700 border border-gray-700 rounded-r-md text-white hover:bg-gray-600 transition-colors"
+                  className="px-4 py-3 bg-zinc-800 border border-zinc-700 rounded-r-md text-white hover:bg-zinc-700 transition-colors"
                 >
                   Copy
                 </button>
@@ -80,18 +80,18 @@ export default function EmailLinkGenerator() {
               {generatedTime && (
                 <div className="mt-4 p-3 bg-gray-800/50 border border-gray-700 rounded-md">
                   <p className="text-gray-200 text-sm font-medium">Link Details:</p>
-                  <p className="text-gray-300 text-sm mt-1">
+                  <p className="text-zinc-300 text-sm mt-1">
                     • Generated: {generatedTime.toLocaleString()}
                   </p>
-                  <p className="text-gray-300 text-sm">
+                  <p className="text-zinc-300 text-sm">
                     • Expires: {new Date(generatedTime.getTime() + LINK_VALIDITY_HOURS * 60 * 60 * 1000).toLocaleString()}
                   </p>
-                  <p className="text-gray-300 text-sm">
+                  <p className="text-zinc-300 text-sm">
                     • Valid for: {LINK_VALIDITY_HOURS} hours
                   </p>
                 </div>
               )}
-              <p className="text-gray-400 text-sm mt-4">
+              <p className="text-zinc-400 text-sm mt-4">
                 Use this link to access the export page with the encrypted email.
                 Remember that the link will expire after {LINK_VALIDITY_HOURS} hours.
               </p>
@@ -100,7 +100,7 @@ export default function EmailLinkGenerator() {
         </div>
       </main>
       
-      <footer className="absolute bottom-8 text-white/50 text-sm">
+      <footer className="absolute bottom-8 text-zinc-400 text-sm">
         <p>For development and testing purposes only.</p>
       </footer>
     </div>
