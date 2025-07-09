@@ -9,8 +9,8 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@solana/spl-token" : "0.4.13",
     "@privy-io/react-auth": "^2.17.3",
+    "@solana/spl-token": "^0.4.13",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "lucide-react": "^0.511.0",
