@@ -9,8 +9,8 @@ const orbitron = Orbitron({
 });
 
 export const metadata: Metadata = {
-  title: "Coming Soon | Wagus",
-  description: "Wagus is coming soon. Stay tuned for something amazing.",
+  title: "Export Wallet | Wagus",
+  description: "Export your Wagus wallet private key securely.",
 };
 
 export default function RootLayout({
